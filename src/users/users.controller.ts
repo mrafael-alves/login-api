@@ -11,7 +11,7 @@ interface ILogin {
     email: string
 }
 
-@Controller('users')
+@Controller('user')
 export class UsersController {
     constructor (private readonly usersService: UsersService) {}
 

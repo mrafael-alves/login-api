@@ -22,8 +22,12 @@ export class UsersService {
     ) {}
 
     public async register(registerDto: RegisterDto): Promise<User> {
-        const user = new this.usersModel(registerDto);
-        return user.save();
+        const user = await this.findByEmail(registerDto.email);
+        if (user) {
+            throw new Error('This email is already in use');
+        }
+        const newUser = new this.usersModel(registerDto);
+        return newUser.save();
     }
 
     public async login(loginDto: LoginDto): Promise<ILogin> {
@@ -39,6 +43,10 @@ export class UsersService {
         return {name: user.name, jwtToken, email: user.email};
     }
 
+    public async findAll(): Promise<User[]> {
+        return this.usersModel.find();
+    }
+
     private async findByEmail(email: string): Promise<User> {
         const user = await this.usersModel.findOne({email});
         if (!user) {
@@ -46,10 +54,6 @@ export class UsersService {
         }
 
         return user;
-    }
-
-    public async findAll(): Promise<User[]> {
-        return this.usersModel.find();
     }
 
     private async checkPassword(password: string, user: User): Promise<boolean> {        
