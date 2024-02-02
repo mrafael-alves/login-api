@@ -1,7 +1,11 @@
 import { Document } from 'mongoose';
 
 export interface User extends Document {
-  name: string;
+  fullName: string;
+  username: string;
   email: string;
   password: string;
+  role: string;
+  resetPasswordToken?: string;
+  resetPasswordExpires?: Date;
 }

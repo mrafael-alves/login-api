@@ -1,7 +1,7 @@
 import { BadRequestException, Injectable, UnauthorizedException } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Request } from 'express';
-import { sign } from 'jsonwebtoken';
+import { sign, verify } from 'jsonwebtoken';
 import { Model } from 'mongoose';
 import { User } from 'src/users/models/users.model';
 import { JwtPayload } from './models/jwt.payload.model';
@@ -22,7 +22,7 @@ export class AuthService {
     public async validateUser(jwtPayload: JwtPayload): Promise<User> {
         const user = await this.usersModel.findOne({_id: jwtPayload.userId});
         if (!user) {
-            throw new UnauthorizedException('User not found.');
+            throw new UnauthorizedException('User not found');
         }
 
         return user;
@@ -32,10 +32,20 @@ export class AuthService {
         return AuthService.jwtExtractor;
     }
 
+    public decodeToken(token: string): JwtPayload {
+        const decoded = verify(token, process.env.JWT_SECRET) as JwtPayload;
+
+        if (!decoded) {
+            throw new UnauthorizedException('Invalid Token');
+        }
+
+        return decoded;
+    }
+
     private static jwtExtractor(request: Request): string {
         const authHeader = request.headers.authorization;
         if (!authHeader) {
-            throw new BadRequestException('Bad request.');
+            throw new BadRequestException('Bad request');
         }
 
         const [, token] = authHeader.split(' ');
