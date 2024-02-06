@@ -168,7 +168,7 @@ export class UsersService {
         const passwordResetUrl = `${process.env.FRONT_END_URL}/reset-password?token=${token}`
       
         const mailOptions = {
-          from: 'rafa_al_m@hotmail.com',
+          from: `${process.env.MAILGUN_VERIFIED_EMAIL}`,
           to: email,
           subject: 'Password Reset',
           html: `<p>Please use the following link to reset your password:</p><p><a href=${passwordResetUrl}>Reset Password</a></p>`,
