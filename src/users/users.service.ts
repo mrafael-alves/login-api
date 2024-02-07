@@ -106,7 +106,6 @@ export class UsersService {
         }
 
         const token = await this.authService.createAccessToken(user._id);
-        console.log(token)
         const tokenExpiry = new Date(new Date().getTime() + 60 * 60 * 1000);
 
         await this.saveResetToken(user._id.toString(), token.toString(), tokenExpiry);
@@ -116,8 +115,6 @@ export class UsersService {
     public async resetPassword(token: string, newPassword: string): Promise<any> {
         const decoded = this.authService.decodeToken(token);
         const user = await this.usersModel.findById(decoded.userId);
-        console.log('resetPassword Decoded: ', decoded);
-        console.log('resetPassword User: ', user);
         if (!user) {
           throw new NotFoundException('User not found');
         }
@@ -146,29 +143,28 @@ export class UsersService {
         if (!user) {
             throw new Error('User not found');
         }
-        console.log('saveResetToken token: ', token);
 
         user.resetPasswordToken = token;        
         user.resetPasswordExpires = expiry;
         await user.save();
-        console.log('saveResetToken user.resetPasswordToken: ', user.resetPasswordToken);
     }
 
     private async sendResetEmail(email: string, token: string): Promise<void> {
         const transporter = nodemailer.createTransport({
-          host: process.env.MAILGUN_SMTP_HOSTNAME,
-          port: process.env.MAILGUN_PORT,
+          service:'gmail',
+          host: process.env.GOOGLE_HOSTNAME,
+          port: process.env.GOOGLE_PORT,
           secure: false,
           auth: {
-            user: process.env.MAILGUN_USERNAME,
-            pass: process.env.MAILGUN_DEFAULT_PASSWORD,
+            user: process.env.GOOGLE_USER,
+            pass: process.env.GOOGLE_PASS,
           },
         });
     
         const passwordResetUrl = `${process.env.FRONT_END_URL}/reset-password?token=${token}`
       
         const mailOptions = {
-          from: `${process.env.MAILGUN_VERIFIED_EMAIL}`,
+          from: `${process.env.GOOGLE_USER}`,
           to: email,
           subject: 'Password Reset',
           html: `<p>Please use the following link to reset your password:</p><p><a href=${passwordResetUrl}>Reset Password</a></p>`,
