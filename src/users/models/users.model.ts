@@ -6,6 +6,8 @@ export interface User extends Document {
   email: string;
   password: string;
   role: string;
+  cpf?: string;
+  cnpj?: string;
   resetPasswordToken?: string;
   resetPasswordExpires?: Date;
 }

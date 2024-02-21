@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import * as bcrypt from 'bcrypt';
 import { Model } from 'mongoose';
@@ -40,6 +40,13 @@ export class UsersService {
        
         if (user) {
             throw new Error('This email is already in use');
+        }
+        if (registerDto.cpf && registerDto.cnpj) {
+            throw new BadRequestException('You must provide either CPF or CNPJ, not both.');
+        }
+
+        if (!registerDto.cpf && !registerDto.cnpj) {
+            throw new BadRequestException('You must provide either CPF or CNPJ.');
         }
         const newUser = new this.usersModel(registerDto);
         const savedUser = await newUser.save();
