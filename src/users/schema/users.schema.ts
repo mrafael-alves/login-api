@@ -4,15 +4,12 @@ import * as bcrypt from 'bcrypt';
 export const UsersSchema = new mongoose.Schema({
     fullName: {
         type: String,
-        required: true
     },
     username: {
         type: String,
-        required: true
     },
     email: {
         type: String,
-        required: true,
         unique: true
     },
     password: {
@@ -21,15 +18,11 @@ export const UsersSchema = new mongoose.Schema({
     },
     cpf: {
         type: String,
-        required: false,
         unique: true,
-        length: 11
     },
     cnpj: {
         type: String,
-        required: false,
         unique: true,
-        length: 14
     },
     role: {
         type: String,

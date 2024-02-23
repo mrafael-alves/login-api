@@ -8,6 +8,8 @@ import { RegisterDto } from './dto/register.dto';
 import { LoginDto } from './dto/login.dto';
 import { Request } from 'express';
 import * as nodemailer from 'nodemailer';
+import * as fs from 'fs';
+import { promisify } from 'util';
 
 interface LoginResponse {
     userData: {
@@ -23,9 +25,13 @@ interface UserDataResponse {
         fullName: string;
         username: string;
         email: string;
+        cpf: string;
+        cnpj: string;
         role: string;
     }
 }
+
+const readFileAsync = promisify(fs.readFile);
 
 @Injectable()
 export class UsersService {
@@ -41,13 +47,10 @@ export class UsersService {
         if (user) {
             throw new Error('This email is already in use');
         }
-        if (registerDto.cpf && registerDto.cnpj) {
+        if ((registerDto.cpf && registerDto.cnpj) || (!registerDto.cpf && !registerDto.cnpj)) {
             throw new BadRequestException('You must provide either CPF or CNPJ, not both.');
         }
 
-        if (!registerDto.cpf && !registerDto.cnpj) {
-            throw new BadRequestException('You must provide either CPF or CNPJ.');
-        }
         const newUser = new this.usersModel(registerDto);
         const savedUser = await newUser.save();
 
@@ -55,6 +58,9 @@ export class UsersService {
         userObject._id = userObject._id.toString();
         delete userObject.password;
         delete userObject.__v;
+
+        await this.sendWelcomeEmail(userObject.email, userObject.fullName);
+
 
         return userObject;
     }
@@ -99,6 +105,8 @@ export class UsersService {
                 fullName: user.fullName,
                 username: user.username,
                 email: user.email,
+                cpf: user.cpf,
+                cnpj: user.cnpj,
                 role: user.role
             }
         }
@@ -156,7 +164,7 @@ export class UsersService {
         await user.save();
     }
 
-    private async sendResetEmail(email: string, token: string): Promise<void> {
+    private async emailTransporter (): Promise<nodemailer.transporter> {
         const transporter = nodemailer.createTransport({
           service:'gmail',
           host: process.env.GOOGLE_HOSTNAME,
@@ -167,17 +175,44 @@ export class UsersService {
             pass: process.env.GOOGLE_PASS,
           },
         });
-    
+
+        return transporter;
+    }
+
+    private async sendResetEmail (email: string, token: string): Promise <void> {
+        const transporter = await this.emailTransporter();
+
         const passwordResetUrl = `${process.env.FRONT_END_URL}/reset-password?token=${token}`
       
         const mailOptions = {
           from: `${process.env.GOOGLE_USER}`,
           to: email,
-          subject: 'Password Reset',
-          html: `<p>Please use the following link to reset your password:</p><p><a href=${passwordResetUrl}>Reset Password</a></p>`,
+          subject: 'Recuperação de senha CCAuto',
+          html: `<p>Por favor, utilize o link para recuperar sua senha de acesso.</p><p><a href=${passwordResetUrl}>Reset Password</a></p>`,
         };
       
         await transporter.sendMail(mailOptions);
+    } 
+
+    private async loadEmailTemplate (templateName: string): Promise<string> {
+        const templatePath = `C:/Users/Rafael/Desktop/Projetos/nestjs-login/src/users/email-templates/welcome-template/${templateName}`;
+        return await readFileAsync(templatePath, 'utf-8');
     }
-      
+
+    public async sendWelcomeEmail (email: string, fullName: string): Promise<void> {
+        const transporter = await this.emailTransporter();
+        const htmlContent = await this.loadEmailTemplate('welcome-template.html');
+        const personalizedContent = htmlContent.replace('{{name}}', fullName);
+
+        const mailOptions = {
+            from: `${process.env.GOOGLE_USER}`,
+            to: email,
+            subject: 'Bem-vindo(a) ao CCAuto',
+            html: personalizedContent,
+          };
+
+          await transporter.sendMail(mailOptions);
+    }
+        
 }
+      

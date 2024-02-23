@@ -21,6 +21,8 @@ interface IUserData {
         fullName: string;
         username: string;
         email: string;
+        cpf?: string;
+        cnpj?: string;
         role: string;
     }
 }
